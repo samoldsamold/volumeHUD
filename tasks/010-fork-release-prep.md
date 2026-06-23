@@ -13,7 +13,7 @@ tests, Xcode no-sign builds, Git.
 
 ---
 
-Status: In Progress
+Status: Completed
 Spec: `specs/010-fork-release-prep.md`
 Owner: Codex
 
@@ -43,7 +43,7 @@ Owner: Codex
 - [x] Run lint/diff checks and record exact availability/output.
 - [x] Run spec compliance review, fix findings, and re-review.
 - [x] Run code quality review, fix findings, and re-review.
-- [ ] Commit and push the current branch to `origin`.
+- [x] Commit and push the current branch to `origin`.
 
 ## Planned Commands
 
@@ -93,6 +93,8 @@ git push -u origin codex/hud-position-opacity
 | `swiftformat --lint .` | 127 | `zsh:1: command not found: swiftformat` |
 | `swiftlint lint` | 127 | `zsh:1: command not found: swiftlint` |
 | `git diff --check` | 0 | No output. |
+| `git diff --cached --stat && git commit -m "feat: add customizable HUD appearance"` | 0 | `53 files changed, 3665 insertions(+), 130 deletions(-)`; `[codex/hud-position-opacity 5dbfd12] feat: add customizable HUD appearance` |
+| `git status --short && git push -u origin codex/hud-position-opacity` | 0 | `* [new branch] codex/hud-position-opacity -> codex/hud-position-opacity`; `branch 'codex/hud-position-opacity' set up to track 'origin/codex/hud-position-opacity'.` |
 
 ## Review Log
 
@@ -104,7 +106,7 @@ git push -u origin codex/hud-position-opacity
 - AC4 passed: `ForkReleaseMetadataTests` verifies `docs/CHANGE_SUMMARY.md` names `samoldsamold/volumeHUD` and `v3.4.0`.
 - AC5 passed: the focused metadata test covers fork owner, repo, and marketing version.
 - AC6 passed with a recorded environment gap: source-level tests and both Xcode builds pass; `swiftformat` and `swiftlint` are not installed locally.
-- AC7 pending until `git commit` and `git push` complete.
+- AC7 passed: commit `5dbfd12` was created and branch `codex/hud-position-opacity` was pushed to `origin`.
 
 ### Spec Compliance Re-Review
 
