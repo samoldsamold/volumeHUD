@@ -1,72 +1,145 @@
 # volumeHUD
 
-A personal fork of Danny Stewart's volumeHUD that brings back the classic
-macOS volume and brightness HUDs, with additional HUD appearance controls.
+<p align="right">
+  <a href="#中文"><kbd>中文</kbd></a>
+  <a href="#english"><kbd>English</kbd></a>
+</p>
 
-Original project: <https://github.com/dannystewart/volumeHUD>
+## 中文
 
-This fork keeps the original MIT license attribution and adds customization
-options for HUD size, height, opacity, and glass styling.
+这是 Danny Stewart 的 [volumeHUD](https://github.com/dannystewart/volumeHUD)
+的个人 fork。它保留经典 macOS 音量和亮度 HUD，并加入了更多 HUD 外观自定义选项。
 
-## Why This Exists
+本 fork 保留原项目的 MIT 协议和版权署名，并在 `NOTICE` 中记录本 fork 的修改署名。
 
-With macOS Tahoe, Apple revamped Control Center and replaced the classic volume and brightness indicators of 25 years with tiny popovers in the corner of the screen, even smaller than notifications. They're hard to see, especially against light backgrounds, and they disappear before I remember where to look. Even after months on the Tahoe beta I haven't gotten used to them. It's bad UI.
+### 新增功能
 
-So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS HUDs we all know and love (except Apple, apparently). They do what any good system indicator should do: they show you the level when you change it and then they go away. And get this—you can actually *see them*. A groundbreaking feature in 2025.
+- 可调 HUD 大小，`30%` 对应原版 200 px 大小。
+- 可调 HUD 高度，可放到屏幕正中，也可以用 **Set to Default** 恢复原作者默认位置。
+- 可调 HUD 透明度。
+- 可选原生 Liquid Glass 风格 HUD 背景。
+- 调整大小、高度、透明度和玻璃效果时实时预览 HUD。
+- 滑块右侧支持直接输入百分比数值。
+- 设置页滑块使用干净的自定义轨道，移除了系统滑块下方的刻度状视觉噪声。
+- 改善浅色、深色、经典材质和 Liquid Glass 模式下图标与进度条的对比度。
+- 设置页增加 **Set to Default**，一键恢复原作者的 HUD 外观默认值。
+- About 页面显示本 fork 维护者署名。
+- 更新检查指向 `samoldsamold/volumeHUD`。
 
-## What It Looks Like
+### 使用
+
+启动 app 后即可使用音量 HUD。再次启动 app 会打开设置窗口，你可以启用开机启动、亮度 HUD、选择 HUD 显示屏幕、调整 HUD 大小/高度/透明度、切换 Liquid Glass 效果，并退出 app。
 
 <img src="Images/volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
-## Usage
+<img src="Images/volumeHUD-settings.png" alt="volumeHUD Settings" height="300"></img>
 
-Just launch the app! You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch the app a second time, you'll get a window where you can set it to open at login, configure HUD preferences, and quit. HUD preferences include an optional native Liquid Glass effect plus size, height, and opacity controls; the percentage values can be edited directly or changed with sliders, and the HUD previews live while you adjust them. It will also show when an update is available.
+亮度 HUD 默认关闭，只支持内建显示器，仍属于实验功能。
+
+volumeHUD 会拦截音量/亮度按键并隐藏系统 HUD。如果按键拦截在你的系统上不可用，app 会自动停止拦截，确保你仍然可以正常调整音量或亮度。
+
+### 安装
+
+从本 fork 的 GitHub Releases 下载最新版：
+
+<https://github.com/samoldsamold/volumeHUD/releases/latest>
+
+本地开发版本也可以直接从 Xcode 构建后复制到 `/Applications`。如果要替换旧版，请先退出正在运行的 volumeHUD，再覆盖 `/Applications/volumeHUD.app`。
+
+### 权限
+
+volumeHUD 会请求两个可选但推荐的权限：
+
+- **通知**：仅用于手动启动时提示 app 已启动。
+- **辅助功能**：用于完整拦截音量/亮度按键并隐藏系统 HUD。
+
+没有辅助功能权限时，app 仍可运行，但系统 HUD 可能会同时出现，并且在音量/亮度边界值附近的检测会不完整。
+
+### 故障排查
+
+如果 HUD 行为不稳定，最常见原因是辅助功能权限异常。建议执行一次干净重装：
+
+1. 再次打开 volumeHUD，并点击 **Quit volumeHUD** 完全退出。
+2. 打开 **System Settings** -> **Privacy & Security** -> **Accessibility**。
+3. 从列表中移除 **volumeHUD**。
+4. 删除 `/Applications/volumeHUD.app`。
+5. 从本 fork 的最新 release 重新安装。
+6. 再次打开 app，并按系统提示重新授予辅助功能权限。
+
+### 许可证
+
+本项目基于 [MIT License](./LICENSE) 开源。
+
+原项目版权归 Danny Stewart 所有。本 fork 保留原版权声明，并在 [NOTICE](./NOTICE) 中加入 ZHOU YONGYU 的修改署名。
+
+---
+
+## English
+
+This is a personal fork of Danny Stewart's
+[volumeHUD](https://github.com/dannystewart/volumeHUD). It keeps the classic
+macOS volume and brightness HUD experience and adds more HUD appearance
+customization.
+
+This fork preserves the original MIT license attribution and records fork
+modification attribution in `NOTICE`.
+
+### What's New
+
+- Adjustable HUD size. `30%` matches the original 200 px HUD size.
+- Adjustable HUD height, including centered placement and **Set to Default** for the original lower placement.
+- Adjustable HUD opacity.
+- Optional native Liquid Glass style for the HUD background.
+- Live HUD previews while changing size, height, opacity, and glass settings.
+- Direct percentage input next to each HUD appearance slider.
+- Clean custom settings sliders without native tick-like marks.
+- Improved icon and level-bar contrast in light, dark, classic material, and Liquid Glass modes.
+- **Set to Default** restores the original author's HUD appearance defaults.
+- About window shows this fork's maintainer attribution.
+- Update checks target `samoldsamold/volumeHUD`.
+
+### Usage
+
+Launch the app to start using the volume HUD. Launch it again to open the settings window, where you can enable open-at-login, brightness HUD support, choose the HUD display, adjust HUD size/height/opacity, toggle Liquid Glass, and quit the app.
+
+<img src="Images/volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
 <img src="Images/volumeHUD-settings.png" alt="volumeHUD Settings" height="300"></img>
 
-As of version 2.0, volumeHUD supports brightness. It is **off by default** (this is *volumeHUD*, after all), and it is **experimental and unsupported**. It will only work for built-in displays, and it may not be bulletproof for automatic changes like power source or ambient light, though it does mostly catch these.
+Brightness HUD support is off by default. It only supports built-in displays and should still be considered experimental.
 
-As of version 3.0, **volumeHUD hides the system HUD**. It does this by intercepting the volume/brightness keys and handling volume/brightness changes directly, instead of having the OS do it. There is a safety check to make sure the volume/brightness has actually changed after you press a key; if not, the app assumes key interception is not working and disables it until a device change or the app is restarted. This ensures you can still change volume or brightness even if this doesn't work on your system.
+volumeHUD intercepts volume/brightness keys and hides the system HUD. If key interception is not working on your system, the app disables interception so you can still adjust volume or brightness normally.
 
-## Installation
+### Installation
 
 Download the latest build from this fork's GitHub Releases page:
+
 <https://github.com/samoldsamold/volumeHUD/releases/latest>
 
-To uninstall, quit volumeHUD, delete the app from `/Applications`, and remove it
-from **System Settings** -> **General** -> **Login Items** if you enabled launch
-at login.
+For local development builds, you can build the app with Xcode and copy it to `/Applications`. To replace an older version, quit volumeHUD first, then overwrite `/Applications/volumeHUD.app`.
 
-## Permissions
+### Permissions
 
-I worked hard to ensure the app could function without requiring any permissions. It will request two that are **optional but recommended**.
+volumeHUD requests two optional but recommended permissions:
 
-- **Notifications** are used only to confirm the app has started (and only when launched manually, not as a login item). Feel free to disable if you find them unnecessary.
-- **Accessibility** is needed for full functionality. The app will work without it, but you lose some features:
-  - The system HUD will still appear alongside volumeHUD.
-  - The HUD won't appear if you go below 0% or above 100% since it can't use key presses to determine if levels should have changed.
-  - Brightness checks may be less reliable since key timing can't be used to check whether a change is user-initiated.
+- **Notifications**: only used to confirm that the app started after a manual launch.
+- **Accessibility**: required for full key interception and system HUD hiding.
 
-Apart from that, all other features should work.
+Without Accessibility permission, the app still runs, but the system HUD may appear alongside volumeHUD, and edge-level volume/brightness detection may be incomplete.
 
-## Troubleshooting
+### Troubleshooting
 
-If you're experiencing inconsistent behavior, the most likely cause is lack of Accessibility permissions, and the first thing I would recommend is a full reset. The most thorough way to do this is to uninstall and reinstall:
+If HUD behavior is inconsistent, Accessibility permission state is the most likely cause. Try a clean reinstall:
 
-1. Completely quit volumeHUD by opening it a second time and clicking **Quit volumeHUD**.
-2. Open **System Settings** → **Privacy & Security** → **Accessibility**.
-3. Find **volumeHUD** in the list, select it, and click the minus (-) button at the bottom. Make sure it's removed from the list.
-4. Delete volumeHUD from `/Applications` and remove it from **System Settings** -> **General** -> **Login Items** if needed.
-5. Download the latest release from this fork and install it again.
-6. Reopen **volumeHUD.app**. You should be prompted with "this application has been downloaded from the internet" first, followed by a request for Accessibility permissions.
-7. Open **System Settings** like it says to do, make sure **volumeHUD** is in the list now, and toggle it on. If it says you'll need to quit and reopen, do that and try again.
+1. Launch volumeHUD again and click **Quit volumeHUD**.
+2. Open **System Settings** -> **Privacy & Security** -> **Accessibility**.
+3. Remove **volumeHUD** from the list.
+4. Delete `/Applications/volumeHUD.app`.
+5. Reinstall the latest release from this fork.
+6. Launch the app again and grant Accessibility permission when prompted.
 
-There was an issue with pre-2.0 versions where volumeHUD didn't request those permissions properly, so if you've been using the app since before then, they're very likely not configured correctly and should be reset.
+### License
 
-**I cannot provide support for specific hardware configurations or interactions with other apps.** Make sure you've checked your settings and attempted a clean reinstall first before opening an issue.
+This project is open source under the [MIT License](./LICENSE).
 
-## License
-
-This project is open source under the [MIT License](./LICENSE). You're free to fork it and do whatever you want with the code.
-
-This fork preserves the original copyright notice for Danny Stewart's volumeHUD and adds modification attribution for ZHOU YONGYU. See [NOTICE](./NOTICE).
+The original project copyright belongs to Danny Stewart. This fork preserves the original copyright notice and adds modification attribution for ZHOU YONGYU in [NOTICE](./NOTICE).
