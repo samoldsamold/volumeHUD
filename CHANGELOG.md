@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Adds a **Set to Default** action that restores original-author HUD appearance defaults.
 - Adds tests and specs for HUD preferences, glass rendering, percentage input, slider interaction, and surface wiring.
 - Adds fork attribution and release/change summary documentation.
-- Adds `modified by Zhou Yongyu` attribution to the About window.
+- Adds fork maintainer attribution to the About window.
 - Clarifies the display-selection setting copy so it no longer implies the HUD follows the cursor position.
 - Aligns settings-row icons in a shared centered slot.
 

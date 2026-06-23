@@ -178,10 +178,7 @@ struct AboutView: View {
                 }
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
-                Text("by Danny Stewart")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                Text("modified by Zhou Yongyu")
+                Text("by Zhou Yongyu")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
 

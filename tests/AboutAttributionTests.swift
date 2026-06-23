@@ -10,6 +10,12 @@ func assertContains(_ haystack: String, _ needle: String, _ message: String) thr
     }
 }
 
+func assertDoesNotContain(_ haystack: String, _ needle: String, _ message: String) throws {
+    if haystack.contains(needle) {
+        throw TestFailure(description: "\(message): found \(needle)")
+    }
+}
+
 func assertLessThan(_ left: String.Index, _ right: String.Index, _ message: String) throws {
     if left >= right {
         throw TestFailure(description: message)
@@ -34,61 +40,78 @@ struct AboutAttributionTests {
     static func main() {
         do {
             let aboutViewSource = try readSource("volumeHUD/AboutView.swift")
+            let license = try readSource("LICENSE")
+            let notice = try readSource("NOTICE")
 
-            try run("About view preserves original and fork attribution text") {
+            try run("About view shows fork maintainer attribution only") {
                 try assertContains(
                     aboutViewSource,
-                    #"Text("by Danny Stewart")"#,
-                    "original author attribution",
+                    #"Text("by Zhou Yongyu")"#,
+                    "fork maintainer attribution",
                 )
-                try assertContains(
+                try assertDoesNotContain(
                     aboutViewSource,
                     #"Text("modified by Zhou Yongyu")"#,
-                    "fork modification attribution",
+                    "old modification attribution",
+                )
+                try assertDoesNotContain(
+                    aboutViewSource,
+                    #"Text("by Danny Stewart")"#,
+                    "original author should not be shown in About UI",
                 )
             }
 
             try run("About attribution appears before version label") {
-                guard let originalRange = aboutViewSource.range(of: #"Text("by Danny Stewart")"#) else {
-                    throw TestFailure(description: "missing original attribution range")
-                }
-                guard let modifiedRange = aboutViewSource.range(of: #"Text("modified by Zhou Yongyu")"#) else {
-                    throw TestFailure(description: "missing modification attribution range")
+                guard let maintainerRange = aboutViewSource.range(of: #"Text("by Zhou Yongyu")"#) else {
+                    throw TestFailure(description: "missing maintainer attribution range")
                 }
                 guard let versionRange = aboutViewSource.range(of: "Text(aboutVersionLabelText)") else {
                     throw TestFailure(description: "missing version label range")
                 }
 
                 try assertLessThan(
-                    originalRange.lowerBound,
-                    modifiedRange.lowerBound,
-                    "modification attribution should follow original author",
-                )
-                try assertLessThan(
-                    modifiedRange.lowerBound,
+                    maintainerRange.lowerBound,
                     versionRange.lowerBound,
-                    "modification attribution should appear before version label",
+                    "maintainer attribution should appear before version label",
                 )
             }
 
             try run("About attribution uses muted author styling") {
-                guard let originalRange = aboutViewSource.range(of: #"Text("by Danny Stewart")"#) else {
-                    throw TestFailure(description: "missing original attribution range")
+                guard let maintainerRange = aboutViewSource.range(of: #"Text("by Zhou Yongyu")"#) else {
+                    throw TestFailure(description: "missing maintainer attribution range")
                 }
                 guard let versionRange = aboutViewSource.range(of: "Text(aboutVersionLabelText)") else {
                     throw TestFailure(description: "missing version label range")
                 }
 
-                let attributionBlock = String(aboutViewSource[originalRange.lowerBound ..< versionRange.lowerBound])
+                let attributionBlock = String(aboutViewSource[maintainerRange.lowerBound ..< versionRange.lowerBound])
                 let fontCount = countOccurrences(of: ".font(.system(size: 12))", in: attributionBlock)
                 let secondaryCount = countOccurrences(of: ".foregroundStyle(.secondary)", in: attributionBlock)
 
-                if fontCount < 2 {
-                    throw TestFailure(description: "expected both attribution lines to use 12 pt font")
+                if fontCount < 1 {
+                    throw TestFailure(description: "expected maintainer attribution to use 12 pt font")
                 }
-                if secondaryCount < 2 {
-                    throw TestFailure(description: "expected both attribution lines to use secondary foreground style")
+                if secondaryCount < 1 {
+                    throw TestFailure(description: "expected maintainer attribution to use secondary foreground style")
                 }
+            }
+
+            try run("MIT attribution remains in license and notice") {
+                try assertContains(
+                    license,
+                    "Copyright (c) 2025 Danny Stewart",
+                    "original MIT copyright remains in LICENSE",
+                )
+                try assertContains(
+                    notice,
+                    "Copyright (c) 2025 Danny Stewart",
+                    "original MIT copyright remains in NOTICE",
+                )
+                try assertContains(
+                    notice,
+                    "Copyright (c) 2026 ZHOU YONGYU",
+                    "fork modification copyright remains in NOTICE",
+                )
             }
 
             print("All AboutAttribution tests passed.")

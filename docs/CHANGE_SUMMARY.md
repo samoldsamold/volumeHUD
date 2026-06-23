@@ -21,7 +21,7 @@ Recommended release tag: `v3.4.0`
 - Settings sliders use a custom clean track without native tick-like marks.
 - `Set to Default` restores original-author HUD appearance defaults.
 - HUD foreground contrast is improved in both classic and Liquid Glass modes.
-- The About window keeps the original author attribution and adds `modified by Zhou Yongyu`.
+- The About window shows fork maintainer attribution while license files retain the original MIT attribution.
 - The display-selection setting is renamed from `HUD Follows Mouse` to clearer mouse-display copy.
 - Settings-row icons now use a shared centered slot so SF Symbols align consistently.
 

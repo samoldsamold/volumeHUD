@@ -1,8 +1,12 @@
 # volumeHUD
 
-A simple macOS app that brings back the classic volume and brightness HUDs.
+A personal fork of Danny Stewart's volumeHUD that brings back the classic
+macOS volume and brightness HUDs, with additional HUD appearance controls.
 
-**NOTE: volumeHUD is feature-complete and no longer under active development.** It is a personal project that I built for myself, and it does everything it's supposed to do. I'm very glad it's found an appreciative audience, but no further updates are planned.
+Original project: <https://github.com/dannystewart/volumeHUD>
+
+This fork keeps the original MIT license attribution and adds customization
+options for HUD size, height, opacity, and glass styling.
 
 ## Why This Exists
 
@@ -26,13 +30,12 @@ As of version 3.0, **volumeHUD hides the system HUD**. It does this by intercept
 
 ## Installation
 
-You can download it from the repo, but I strongly recommend installing via Homebrew, as that will handle updates for you. It's my first Swift app, so I don't want you to be left with any lingering bugs.
+Download the latest build from this fork's GitHub Releases page:
+<https://github.com/samoldsamold/volumeHUD/releases/latest>
 
-```bash
-brew install dannystewart/apps/volumehud
-```
-
-You can uninstall with `brew uninstall volumehud`, which should remove all traces of the app, including preferences and login item. No permissions should be left behind either once the app is gone.
+To uninstall, quit volumeHUD, delete the app from `/Applications`, and remove it
+from **System Settings** -> **General** -> **Login Items** if you enabled launch
+at login.
 
 ## Permissions
 
@@ -53,8 +56,8 @@ If you're experiencing inconsistent behavior, the most likely cause is lack of A
 1. Completely quit volumeHUD by opening it a second time and clicking **Quit volumeHUD**.
 2. Open **System Settings** → **Privacy & Security** → **Accessibility**.
 3. Find **volumeHUD** in the list, select it, and click the minus (-) button at the bottom. Make sure it's removed from the list.
-4. Assuming you installed with Homebrew, run `brew uninstall volumehud` to remove the login item, the app, and any remaining files.
-5. Run `brew install dannystewart/apps/volumehud` to reinstall.
+4. Delete volumeHUD from `/Applications` and remove it from **System Settings** -> **General** -> **Login Items** if needed.
+5. Download the latest release from this fork and install it again.
 6. Reopen **volumeHUD.app**. You should be prompted with "this application has been downloaded from the internet" first, followed by a request for Accessibility permissions.
 7. Open **System Settings** like it says to do, make sure **volumeHUD** is in the list now, and toggle it on. If it says you'll need to quit and reopen, do that and try again.
 
@@ -67,5 +70,3 @@ There was an issue with pre-2.0 versions where volumeHUD didn't request those pe
 This project is open source under the [MIT License](./LICENSE). You're free to fork it and do whatever you want with the code.
 
 This fork preserves the original copyright notice for Danny Stewart's volumeHUD and adds modification attribution for ZHOU YONGYU. See [NOTICE](./NOTICE).
-
-<a href="https://www.buymeacoffee.com/dannystewart" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" height="41" width="174"></a>
