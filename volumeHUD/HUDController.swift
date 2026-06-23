@@ -11,6 +11,18 @@ import CoreGraphics
 import Foundation
 import SwiftUI
 
+private extension HUDContentKind {
+    init(hudType: HUDType) {
+        switch hudType {
+        case .volume:
+            self = .volume
+
+        case .brightness:
+            self = .brightness
+        }
+    }
+}
+
 @MainActor
 class HUDController: ObservableObject {
     @Published var isShowing = false
@@ -20,10 +32,8 @@ class HUDController: ObservableObject {
     private var hudWindow: NSWindow?
     private var hostingView: NSHostingView<HUDView>?
     private var hideTimer: Timer?
-    private var lastShownVolume: Float?
-    private var lastShownMuted: Bool?
-    private var lastShownBrightness: Float?
-    private var lastShownHUDType: HUDType?
+    private var lastShownContentSnapshot: HUDContentSnapshot?
+    private var hideAnimationGeneration = 0
     private var isObservingDisplayChanges = false
     private let isPreviewMode: Bool
 
@@ -36,6 +46,11 @@ class HUDController: ObservableObject {
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
         displayHUD(hudType: .volume, value: volume, isMuted: isMuted)
+    }
+
+    @MainActor
+    func showPreviewHUD() {
+        displayHUD(hudType: .volume, value: 0.7, isMuted: false)
     }
 
     #if !SANDBOX
@@ -112,7 +127,7 @@ class HUDController: ObservableObject {
     private func updateWindowPosition(for hudType: HUDType? = nil) {
         guard let window = hudWindow else { return }
 
-        let windowSize = NSSize(width: 200, height: 200)
+        let windowSize = HUDPreferences.windowSize(size: HUDPreferences.storedSize())
 
         // Brightness HUD always shows on built-in display (since that's what it controls). Volume
         // HUD respects user preference for display location.
@@ -196,17 +211,10 @@ class HUDController: ObservableObject {
         // Use full screen frame to ignore Dock positioning
         let screenFrame = targetScreen.frame
 
-        // Check user preference for positioning
-        let useRelativePositioning = UserDefaults.standard.bool(forKey: "useRelativePositioning")
-        let yPosition = useRelativePositioning
-            ? screenFrame.origin.y + screenFrame.height * 0.17 // 17% from bottom
-            : screenFrame.origin.y + 140 // 140px from bottom
-
-        let newWindowRect = NSRect(
-            x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
-            y: yPosition,
-            width: windowSize.width,
-            height: windowSize.height,
+        let newWindowRect = HUDPreferences.windowRect(
+            screenFrame: screenFrame,
+            windowSize: windowSize,
+            verticalPosition: HUDPreferences.storedVerticalPosition(),
         )
 
         // Update the window frame
@@ -257,6 +265,7 @@ class HUDController: ObservableObject {
     private func displayHUD(hudType: HUDType, value: Float, isMuted: Bool) {
         // Cancel any existing hide timer
         hideTimer?.invalidate()
+        hideAnimationGeneration += 1
 
         // Create or update the HUD window
         if hudWindow == nil {
@@ -265,31 +274,43 @@ class HUDController: ObservableObject {
 
         // Update the content view
         if let window = hudWindow {
-            let shouldUpdateContent: Bool =
-                switch hudType {
-                case .volume:
-                    hostingView == nil
-                        || lastShownHUDType != hudType
-                        || lastShownVolume == nil
-                        || abs((lastShownVolume ?? -1) - value) > 0.0005
-                        || (lastShownMuted ?? !isMuted) != isMuted
-
-                case .brightness:
-                    hostingView == nil
-                        || lastShownHUDType != hudType
-                        || lastShownBrightness == nil
-                        || abs((lastShownBrightness ?? -1) - value) > 0.0005
-                }
+            let currentWindowSize = HUDPreferences.windowSize(size: HUDPreferences.storedSize())
+            let currentGlassEffectEnabled = HUDPreferences.storedGlassEffectEnabled()
+            let currentSnapshot = HUDContentSnapshot(
+                kind: HUDContentKind(hudType: hudType),
+                windowSideLength: currentWindowSize.width,
+                glassEffectEnabled: currentGlassEffectEnabled,
+                value: value,
+                isMuted: isMuted,
+            )
+            let shouldUpdateContent = hostingView == nil
+                || HUDContentRefreshPolicy.shouldRefresh(
+                    previous: lastShownContentSnapshot,
+                    current: currentSnapshot,
+                )
 
             // If nothing changed and the window is already visible, just extend the timer
             if window.isVisible, !shouldUpdateContent {
+                window.alphaValue = CGFloat(HUDPreferences.storedOpacity())
+                updateWindowPosition(for: hudType)
                 scheduleHideTimer()
                 return
             }
 
             // Always recreate hosting view to avoid SwiftUI state issues
-            let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted))
-            newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
+            let newHostingView = NSHostingView(rootView: HUDView(
+                hudType: hudType,
+                value: value,
+                isMuted: isMuted,
+                hudSize: currentWindowSize.width,
+                glassEffectEnabled: currentGlassEffectEnabled,
+            ))
+            newHostingView.frame = NSRect(
+                x: 0,
+                y: 0,
+                width: currentWindowSize.width,
+                height: currentWindowSize.height,
+            )
 
             // Ensure hosting view background is clear for proper material rendering
             newHostingView.wantsLayer = true
@@ -305,6 +326,7 @@ class HUDController: ObservableObject {
             updateWindowPosition(for: hudType)
 
             // Show the window
+            window.alphaValue = CGFloat(HUDPreferences.storedOpacity())
             window.orderFront(nil)
             isShowing = true
         }
@@ -312,15 +334,13 @@ class HUDController: ObservableObject {
         scheduleHideTimer()
 
         // Remember last shown state to avoid redundant view rebuilds
-        lastShownHUDType = hudType
-        switch hudType {
-        case .volume:
-            lastShownVolume = value
-            lastShownMuted = isMuted
-
-        case .brightness:
-            lastShownBrightness = value
-        }
+        lastShownContentSnapshot = HUDContentSnapshot(
+            kind: HUDContentKind(hudType: hudType),
+            windowSideLength: HUDPreferences.windowSize(size: HUDPreferences.storedSize()).width,
+            glassEffectEnabled: HUDPreferences.storedGlassEffectEnabled(),
+            value: value,
+            isMuted: isMuted,
+        )
     }
 
     @MainActor
@@ -335,9 +355,11 @@ class HUDController: ObservableObject {
 
     @MainActor
     private func createHUDWindow() {
+        let windowSize = HUDPreferences.windowSize(size: HUDPreferences.storedSize())
+
         // Create the window with special properties for overlay
         hudWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: windowSize.width, height: windowSize.height),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false,
@@ -353,6 +375,7 @@ class HUDController: ObservableObject {
         window.level = .statusBar
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.alphaValue = CGFloat(HUDPreferences.storedOpacity())
         window.hasShadow = false
         window.ignoresMouseEvents = true
         // Avoid .stationary: it can interact badly with Mission Control / Show Desktop.
@@ -373,6 +396,8 @@ class HUDController: ObservableObject {
     @MainActor
     private func hideHUD() {
         guard let window = hudWindow else { return }
+        hideAnimationGeneration += 1
+        let animationGeneration = hideAnimationGeneration
 
         // Animate fade-out before hiding
         NSAnimationContext.runAnimationGroup { context in
@@ -381,9 +406,10 @@ class HUDController: ObservableObject {
             window.animator().alphaValue = 0.0
         } completionHandler: { [weak self] in
             Task { @MainActor [weak self] in
+                guard let self, self.hideAnimationGeneration == animationGeneration else { return }
                 window.orderOut(nil)
-                window.alphaValue = 1.0 // Reset for next show
-                self?.isShowing = false
+                window.alphaValue = CGFloat(HUDPreferences.storedOpacity()) // Reset for next show
+                self.isShowing = false
             }
         }
     }

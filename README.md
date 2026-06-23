@@ -16,7 +16,7 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 ## Usage
 
-Just launch the app! You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch the app a second time, you'll get a window where you can set it to open at login, configure HUD preferences, and quit. It will also show when an update is available.
+Just launch the app! You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch the app a second time, you'll get a window where you can set it to open at login, configure HUD preferences, and quit. HUD preferences include an optional native Liquid Glass effect plus size, height, and opacity controls; the percentage values can be edited directly or changed with sliders, and the HUD previews live while you adjust them. It will also show when an update is available.
 
 <img src="Images/volumeHUD-settings.png" alt="volumeHUD Settings" height="300"></img>
 
@@ -65,5 +65,7 @@ There was an issue with pre-2.0 versions where volumeHUD didn't request those pe
 ## License
 
 This project is open source under the [MIT License](./LICENSE). You're free to fork it and do whatever you want with the code.
+
+This fork preserves the original copyright notice for Danny Stewart's volumeHUD and adds modification attribution for ZHOU YONGYU. See [NOTICE](./NOTICE).
 
 <a href="https://www.buymeacoffee.com/dannystewart" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" height="41" width="174"></a>

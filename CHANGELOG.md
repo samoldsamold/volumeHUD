@@ -6,9 +6,29 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.4.0] (2026-06-23)
+
+### Added
+
+- Adds adjustable HUD size, height, opacity, and an optional Liquid Glass style.
+- Adds live HUD previews while changing HUD appearance settings.
+- Adds direct percentage input fields next to HUD appearance sliders.
+- Adds a **Set to Default** action that restores original-author HUD appearance defaults.
+- Adds tests and specs for HUD preferences, glass rendering, percentage input, slider interaction, and surface wiring.
+- Adds fork attribution and release/change summary documentation.
+- Adds `modified by Zhou Yongyu` attribution to the About window.
+- Clarifies the display-selection setting copy so it no longer implies the HUD follows the cursor position.
+- Aligns settings-row icons in a shared centered slot.
+
 ### Changed
 
 - Replaces the separate login helper app with macOS's built-in `SMAppService.mainApp` login item registration.
+- Improves HUD foreground contrast in classic and Liquid Glass modes by keeping value bars visually aligned with the icon/symbol.
+- Replaces native settings sliders with clean custom sliders to remove tick-like marks.
+
+### Fixed
+
+- Fixes Liquid Glass mode applying glass foreground effects directly to HUD content, which made value bars look dimmer than the icon.
 
 ## [3.3.1] (2026-03-23)
 
@@ -273,7 +293,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.1...HEAD
+[unreleased]: https://github.com/samoldsamold/volumeHUD/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/samoldsamold/volumeHUD/compare/v3.3.1...v3.4.0
 [3.3.1]: https://github.com/dannystewart/volumeHUD/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/dannystewart/volumeHUD/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...v3.2.0

@@ -311,6 +311,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - Show About Window
 
+    @MainActor
+    func showHUDPreview() {
+        hudController?.showPreviewHUD()
+    }
+
     private func showAboutWindow() {
         // If window already exists and is visible, just bring it to the front
         if let window = aboutWindow, window.isVisible {
@@ -333,7 +338,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Use NSPanel to remain in accessory mode
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 820, height: 470),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
@@ -348,8 +353,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Position at visual center of the screen
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
-            let windowWidth: CGFloat = 600
-            let windowHeight: CGFloat = 300
+            let windowWidth: CGFloat = 820
+            let windowHeight: CGFloat = 470
 
             let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
             let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
