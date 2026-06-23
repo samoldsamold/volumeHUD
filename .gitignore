@@ -47,6 +47,7 @@ Packages/
 .cursor/rules/
 .cursorindexingignore
 .DS_Store
+.superpowers/
 .specstory/
 *.tmp
 BuildNumber.xcconfig

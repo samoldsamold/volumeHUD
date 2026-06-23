@@ -17,14 +17,17 @@ struct AboutView: View {
         @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
     #endif // !SANDBOX
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
-    @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
+    @AppStorage(HUDPreferences.sizeKey) private var hudSize: Double = HUDPreferences.defaultSize
+    @AppStorage(HUDPreferences.verticalPositionKey) private var hudVerticalPosition: Double = HUDPreferences.defaultVerticalPosition
+    @AppStorage(HUDPreferences.opacityKey) private var hudOpacity: Double = HUDPreferences.defaultOpacity
+    @AppStorage(HUDPreferences.glassEffectEnabledKey) private var hudGlassEffectEnabled: Bool = HUDPreferences.defaultGlassEffectEnabled
 
     #if !SANDBOX
         /// State to track if an update is available
         @State private var isUpdateAvailable: Bool = false
 
         // GitHub repository info
-        private let githubOwner = "dannystewart"
+        private let githubOwner = "samoldsamold"
         private let githubRepo = "volumeHUD"
     #endif // !SANDBOX
 
@@ -37,7 +40,8 @@ struct AboutView: View {
     let logger: Logger = .init()
 
     // Visual alignment
-    private let iconColumnWidth: CGFloat = 20
+    private let settingIconSlotWidth: CGFloat = 24
+    private let settingIconTextSpacing: CGFloat = 10
     private let minSettingColumnWidth: CGFloat = 140
     private let settingPadding: CGFloat = 24 // Higher for less padding
     private let spaceBeforeSubtitle: CGFloat = -3
@@ -66,6 +70,100 @@ struct AboutView: View {
         }
     }
 
+    private var hudSizeBinding: Binding<Double> {
+        Binding(
+            get: { HUDPreferences.clampedSize(hudSize) },
+            set: { newValue in
+                hudSize = HUDPreferences.clampedSize(newValue)
+                showHUDPreview()
+            },
+        )
+    }
+
+    private var hudVerticalPositionBinding: Binding<Double> {
+        Binding(
+            get: { HUDPreferences.clampedVerticalPosition(hudVerticalPosition) },
+            set: { newValue in
+                hudVerticalPosition = HUDPreferences.clampedVerticalPosition(newValue)
+                showHUDPreview()
+            },
+        )
+    }
+
+    private var hudOpacityBinding: Binding<Double> {
+        Binding(
+            get: { HUDPreferences.clampedOpacity(hudOpacity) },
+            set: { newValue in
+                hudOpacity = HUDPreferences.clampedOpacity(newValue)
+                showHUDPreview()
+            },
+        )
+    }
+
+    private var hudGlassEffectEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { hudGlassEffectEnabled },
+            set: { newValue in
+                hudGlassEffectEnabled = newValue
+                showHUDPreview()
+            },
+        )
+    }
+
+    private func sanitizeHUDSettings() {
+        hudSize = HUDPreferences.clampedSize(hudSize)
+        hudVerticalPosition = HUDPreferences.clampedVerticalPosition(hudVerticalPosition)
+        hudOpacity = HUDPreferences.clampedOpacity(hudOpacity)
+    }
+
+    private func resetHUDAppearanceToOriginalDefaults() {
+        volumeHUDFollowsMouse = HUDPreferences.originalAuthorVolumeHUDFollowsMouse
+        hudSize = HUDPreferences.originalAuthorDefaultSize
+        hudOpacity = HUDPreferences.originalAuthorDefaultOpacity
+        hudGlassEffectEnabled = HUDPreferences.originalAuthorDefaultGlassEffectEnabled
+
+        let windowSize = HUDPreferences.windowSize(size: HUDPreferences.originalAuthorDefaultSize)
+        hudVerticalPosition = HUDPreferences.originalAuthorVerticalPosition(
+            screenHeight: resetTargetScreenFrame().height,
+            windowHeight: windowSize.height,
+        )
+
+        showHUDPreview()
+    }
+
+    private func resetTargetScreenFrame() -> CGRect {
+        if volumeHUDFollowsMouse, let mouseScreen = screenWithMouse() {
+            return mouseScreen.frame
+        }
+
+        if let primaryScreen = primaryScreen() {
+            return primaryScreen.frame
+        }
+
+        return NSScreen.main?.frame ?? NSScreen.screens.first?.frame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+    }
+
+    private func screenWithMouse() -> NSScreen? {
+        let mouseLocation = NSEvent.mouseLocation
+        return NSScreen.screens.first { $0.frame.contains(mouseLocation) }
+    }
+
+    private func primaryScreen() -> NSScreen? {
+        let mainDisplayID = CGMainDisplayID()
+
+        return NSScreen.screens.first { screen in
+            guard let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+                return false
+            }
+
+            return CGDirectDisplayID(screenNumber.uint32Value) == mainDisplayID
+        }
+    }
+
+    private func showHUDPreview() {
+        appDelegate?.showHUDPreview()
+    }
+
     // MARK: - About View
 
     var body: some View {
@@ -81,6 +179,9 @@ struct AboutView: View {
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
                 Text("by Danny Stewart")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                Text("modified by Zhou Yongyu")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
 
@@ -129,7 +230,8 @@ struct AboutView: View {
 
                 LoginItemSetting(
                     loginItemManager: loginItemManager,
-                    iconColumnWidth: iconColumnWidth,
+                    settingIconSlotWidth: settingIconSlotWidth,
+                    settingIconTextSpacing: settingIconTextSpacing,
                     minSettingColumnWidth: minSettingColumnWidth,
                     settingPadding: settingPadding,
                     spaceBeforeSubtitle: spaceBeforeSubtitle,
@@ -140,11 +242,12 @@ struct AboutView: View {
                     // MARK: - Brightness HUD Toggle
 
                     VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-                        HStack(alignment: .center, spacing: iconColumnWidth) {
-                            Image(systemName: "sun.max.fill")
-                                .foregroundStyle(brightnessEnabled ? .orange : .gray)
-                                .font(.system(size: 14))
-                                .frame(width: 14, alignment: .leading)
+                        HStack(alignment: .center, spacing: settingIconTextSpacing) {
+                            SettingIcon(
+                                systemName: "sun.max.fill",
+                                color: brightnessEnabled ? .orange : .gray,
+                                slotWidth: settingIconSlotWidth,
+                            )
                                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                             Text("Brightness HUD")
@@ -162,9 +265,9 @@ struct AboutView: View {
                                 }
                         }
 
-                        HStack(spacing: iconColumnWidth) {
+                        HStack(spacing: settingIconTextSpacing) {
                             Spacer()
-                                .frame(width: 14)
+                                .frame(width: settingIconSlotWidth)
 
                             Text("Experimental, built-in display only")
                                 .font(.system(size: 10))
@@ -180,14 +283,15 @@ struct AboutView: View {
                 // MARK: - Display Toggle for HUD Placement
 
                 VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-                    HStack(alignment: .center, spacing: iconColumnWidth) {
-                        Image(systemName: volumeHUDFollowsMouse ? "cursorarrow.click.2" : "laptopcomputer")
-                            .foregroundStyle(volumeHUDFollowsMouse ? .blue : .gray)
-                            .font(.system(size: 14))
-                            .frame(width: 14, alignment: .leading)
+                    HStack(alignment: .center, spacing: settingIconTextSpacing) {
+                        SettingIcon(
+                            systemName: volumeHUDFollowsMouse ? "cursorarrow.click.2" : "laptopcomputer",
+                            color: volumeHUDFollowsMouse ? .blue : .gray,
+                            slotWidth: settingIconSlotWidth,
+                        )
                             .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
 
-                        Text("HUD Follows Mouse")
+                        Text("Use Mouse Display")
                             .font(.system(size: 12, weight: .medium))
                             .frame(width: minSettingColumnWidth, alignment: .leading)
 
@@ -201,11 +305,11 @@ struct AboutView: View {
                             }
                     }
 
-                    HStack(spacing: iconColumnWidth) {
+                    HStack(spacing: settingIconTextSpacing) {
                         Spacer()
-                            .frame(width: 14)
+                            .frame(width: settingIconSlotWidth)
 
-                        Text(volumeHUDFollowsMouse ? "Show on screen with mouse cursor" : "Always show on the primary display")
+                        Text(volumeHUDFollowsMouse ? "Show HUD on the display with cursor" : "Show HUD on the primary display")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .opacity(0.8)
@@ -215,35 +319,33 @@ struct AboutView: View {
                 .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
 
-                // MARK: - Relative Positioning Toggle
+                // MARK: - HUD Glass Effect Toggle
 
                 VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-                    HStack(alignment: .center, spacing: iconColumnWidth) {
-                        Image(systemName: useRelativePositioning ? "arrow.up.and.down.text.horizontal" : "arrow.down.to.line")
-                            .foregroundStyle(useRelativePositioning ? .cyan : .gray)
-                            .font(.system(size: 14))
-                            .frame(width: 14, alignment: .leading)
-                            .animation(.easeInOut(duration: 0.3), value: useRelativePositioning)
+                    HStack(alignment: .center, spacing: settingIconTextSpacing) {
+                        SettingIcon(
+                            systemName: hudGlassEffectEnabled ? "sparkles.rectangle.stack.fill" : "rectangle",
+                            color: hudGlassEffectEnabled ? .teal : .gray,
+                            slotWidth: settingIconSlotWidth,
+                        )
+                            .animation(.easeInOut(duration: 0.3), value: hudGlassEffectEnabled)
 
-                        Text("Relative HUD Position")
+                        Text("HUD Glass Effect")
                             .font(.system(size: 12, weight: .medium))
                             .frame(width: minSettingColumnWidth, alignment: .leading)
 
                         Spacer()
 
-                        Toggle("", isOn: $useRelativePositioning)
+                        Toggle("", isOn: hudGlassEffectEnabledBinding)
                             .toggleStyle(SwitchToggleStyle(tint: .accentColor))
                             .scaleEffect(0.8)
-                            .onChange(of: useRelativePositioning) { oldValue, newValue in
-                                logger.debug("Relative positioning setting changed from \(oldValue) to \(newValue).")
-                            }
                     }
 
-                    HStack(spacing: iconColumnWidth) {
+                    HStack(spacing: settingIconTextSpacing) {
                         Spacer()
-                            .frame(width: 14)
+                            .frame(width: settingIconSlotWidth)
 
-                        Text(useRelativePositioning ? "Relative percentage from bottom" : "Absolute from bottom (Apple default)")
+                        Text(hudGlassEffectEnabled ? "Use native translucent HUD glass" : "Use classic material background")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .opacity(0.8)
@@ -251,22 +353,84 @@ struct AboutView: View {
                     }
                 }
                 .padding(.leading, settingPadding)
-                .animation(.easeInOut(duration: 0.3), value: useRelativePositioning)
+                .animation(.easeInOut(duration: 0.3), value: hudGlassEffectEnabled)
+
+                // MARK: - HUD Size Slider
+
+                HUDSliderSetting(
+                    value: hudSizeBinding,
+                    range: HUDPreferences.minimumSize ... HUDPreferences.maximumSize,
+                    iconName: "arrow.up.left.and.arrow.down.right",
+                    iconColor: .indigo,
+                    title: "HUD Size",
+                    subtitle: "30% matches the original size",
+                    settingIconSlotWidth: settingIconSlotWidth,
+                    settingIconTextSpacing: settingIconTextSpacing,
+                    minSettingColumnWidth: minSettingColumnWidth,
+                    settingPadding: settingPadding,
+                    spaceBeforeSubtitle: spaceBeforeSubtitle,
+                )
+                .animation(.easeInOut(duration: 0.3), value: hudSize)
+
+                // MARK: - HUD Height Slider
+
+                HUDSliderSetting(
+                    value: hudVerticalPositionBinding,
+                    range: 0.0 ... 1.0,
+                    iconName: "arrow.up.and.down",
+                    iconColor: .cyan,
+                    title: "HUD Height",
+                    subtitle: "Vertical center on selected screen",
+                    settingIconSlotWidth: settingIconSlotWidth,
+                    settingIconTextSpacing: settingIconTextSpacing,
+                    minSettingColumnWidth: minSettingColumnWidth,
+                    settingPadding: settingPadding,
+                    spaceBeforeSubtitle: spaceBeforeSubtitle,
+                )
+                .animation(.easeInOut(duration: 0.3), value: hudVerticalPosition)
+
+                // MARK: - HUD Opacity Slider
+
+                HUDSliderSetting(
+                    value: hudOpacityBinding,
+                    range: HUDPreferences.minimumOpacity ... 1.0,
+                    iconName: "circle.lefthalf.filled",
+                    iconColor: .purple,
+                    title: "HUD Opacity",
+                    subtitle: "Preview updates while adjusting",
+                    settingIconSlotWidth: settingIconSlotWidth,
+                    settingIconTextSpacing: settingIconTextSpacing,
+                    minSettingColumnWidth: minSettingColumnWidth,
+                    settingPadding: settingPadding,
+                    spaceBeforeSubtitle: spaceBeforeSubtitle,
+                )
+                .animation(.easeInOut(duration: 0.3), value: hudOpacity)
+
+                Button {
+                    resetHUDAppearanceToOriginalDefaults()
+                } label: {
+                    Text("Set to Default")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .padding(.leading, settingPadding + settingIconSlotWidth + settingIconTextSpacing)
+                .accessibilityHint("Restores the original volumeHUD placement and appearance")
 
                 Spacer(minLength: 0)
             }
             .padding(.trailing, 6) // Right side window padding
         }
         .padding(32) // Overall frame padding
-        .frame(width: 540, height: 300)
-        #if !SANDBOX
-            .onAppear {
+        .frame(width: 760, height: 470)
+        .onAppear {
+            sanitizeHUDSettings()
+            #if !SANDBOX
                 Task {
                     try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
                     checkForUpdates()
                 }
-            }
-        #endif // !SANDBOX
+            #endif // !SANDBOX
+        }
     }
 
     #if !SANDBOX
@@ -348,25 +512,46 @@ struct AboutView: View {
     #endif // !SANDBOX
 }
 
+// MARK: - Settings Icon
+
+private struct SettingIcon: View {
+    let systemName: String
+    let color: Color
+    let slotWidth: CGFloat
+
+    private let iconFontSize: CGFloat = 14
+    private let slotHeight: CGFloat = 20
+
+    var body: some View {
+        Image(systemName: systemName)
+            .foregroundStyle(color)
+            .font(.system(size: iconFontSize))
+            .frame(width: slotWidth, height: slotHeight, alignment: .center)
+    }
+}
+
 // MARK: - LoginItemSetting
 
 private struct LoginItemSetting: View {
     @ObservedObject private var loginItemManager: LoginItemManager
 
-    let iconColumnWidth: CGFloat
+    let settingIconSlotWidth: CGFloat
+    let settingIconTextSpacing: CGFloat
     let minSettingColumnWidth: CGFloat
     let settingPadding: CGFloat
     let spaceBeforeSubtitle: CGFloat
 
     init(
         loginItemManager: LoginItemManager,
-        iconColumnWidth: CGFloat,
+        settingIconSlotWidth: CGFloat,
+        settingIconTextSpacing: CGFloat,
         minSettingColumnWidth: CGFloat,
         settingPadding: CGFloat,
         spaceBeforeSubtitle: CGFloat,
     ) {
         self.loginItemManager = loginItemManager
-        self.iconColumnWidth = iconColumnWidth
+        self.settingIconSlotWidth = settingIconSlotWidth
+        self.settingIconTextSpacing = settingIconTextSpacing
         self.minSettingColumnWidth = minSettingColumnWidth
         self.settingPadding = settingPadding
         self.spaceBeforeSubtitle = spaceBeforeSubtitle
@@ -374,11 +559,12 @@ private struct LoginItemSetting: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-            HStack(alignment: .center, spacing: iconColumnWidth) {
-                Image(systemName: "power.circle.fill")
-                    .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
-                    .font(.system(size: 14))
-                    .frame(width: 14, alignment: .leading)
+            HStack(alignment: .center, spacing: settingIconTextSpacing) {
+                SettingIcon(
+                    systemName: "power.circle.fill",
+                    color: loginItemManager.isEnabled ? .green : .gray,
+                    slotWidth: settingIconSlotWidth,
+                )
                     .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
 
                 Text("Open at Login")
@@ -396,6 +582,198 @@ private struct LoginItemSetting: View {
             }
         }
         .padding(.leading, settingPadding)
+    }
+}
+
+// MARK: - HUDSliderSetting
+
+private struct HUDSliderSetting: View {
+    @Binding private var value: Double
+
+    let range: ClosedRange<Double>
+    let iconName: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    let settingIconSlotWidth: CGFloat
+    let settingIconTextSpacing: CGFloat
+    let minSettingColumnWidth: CGFloat
+    let settingPadding: CGFloat
+    let spaceBeforeSubtitle: CGFloat
+
+    init(
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        iconName: String,
+        iconColor: Color,
+        title: String,
+        subtitle: String,
+        settingIconSlotWidth: CGFloat,
+        settingIconTextSpacing: CGFloat,
+        minSettingColumnWidth: CGFloat,
+        settingPadding: CGFloat,
+        spaceBeforeSubtitle: CGFloat,
+    ) {
+        _value = value
+        self.range = range
+        self.iconName = iconName
+        self.iconColor = iconColor
+        self.title = title
+        self.subtitle = subtitle
+        self.settingIconSlotWidth = settingIconSlotWidth
+        self.settingIconTextSpacing = settingIconTextSpacing
+        self.minSettingColumnWidth = minSettingColumnWidth
+        self.settingPadding = settingPadding
+        self.spaceBeforeSubtitle = spaceBeforeSubtitle
+    }
+
+    private var percentageBinding: Binding<Double> {
+        Binding(
+            get: { HUDPercentageValue.displayedPercent(for: value) },
+            set: { newValue in
+                value = HUDPercentageValue.unitValue(fromDisplayedPercent: newValue, range: range)
+            },
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
+            HStack(alignment: .center, spacing: settingIconTextSpacing) {
+                SettingIcon(
+                    systemName: iconName,
+                    color: iconColor,
+                    slotWidth: settingIconSlotWidth,
+                )
+
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: minSettingColumnWidth, alignment: .leading)
+
+                Spacer(minLength: 8)
+
+                CleanHUDSlider(value: $value, range: range, title: title)
+                    .frame(width: 150, height: 18)
+
+                HStack(spacing: 3) {
+                    TextField("", value: percentageBinding, format: .number.precision(.fractionLength(0)))
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 11, design: .monospaced))
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 46)
+
+                    Text("%")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 62, alignment: .trailing)
+            }
+
+            HStack(spacing: settingIconTextSpacing) {
+                Spacer()
+                    .frame(width: settingIconSlotWidth)
+
+                Text(subtitle)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .opacity(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.leading, settingPadding)
+    }
+}
+
+private struct CleanHUDSlider: View {
+    @Binding var value: Double
+    @FocusState private var hasKeyboardFocus: Bool
+
+    let range: ClosedRange<Double>
+    let title: String
+
+    private let trackHeight: CGFloat = 4
+    private let thumbSize: CGFloat = 12
+
+    private var normalizedValue: Double {
+        guard range.upperBound > range.lowerBound else {
+            return 0
+        }
+
+        let clampedValue = min(max(value, range.lowerBound), range.upperBound)
+        return (clampedValue - range.lowerBound) / (range.upperBound - range.lowerBound)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let fillWidth = width * CGFloat(normalizedValue)
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.secondary.opacity(0.26))
+                    .frame(height: trackHeight)
+
+                Capsule()
+                    .fill(Color.accentColor.opacity(0.95))
+                    .frame(width: fillWidth, height: trackHeight)
+
+                Circle()
+                    .fill(.background)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .overlay {
+                        Circle()
+                            .stroke(.primary.opacity(0.12), lineWidth: 0.5)
+                    }
+                    .shadow(color: .black.opacity(0.16), radius: 2, x: 0, y: 1)
+                    .offset(x: fillWidth - thumbSize / 2)
+            }
+            .frame(width: width, height: geometry.size.height)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        value = HUDSliderInteraction.value(
+                            forLocation: Double(gesture.location.x),
+                            trackWidth: Double(width),
+                            range: range,
+                        )
+                    },
+            )
+        }
+        .focusable()
+        .focused($hasKeyboardFocus)
+        .onKeyPress(.leftArrow) {
+            adjustValue(.decrement)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            adjustValue(.decrement)
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            adjustValue(.increment)
+            return .handled
+        }
+        .onKeyPress(.upArrow) {
+            adjustValue(.increment)
+            return .handled
+        }
+        .accessibilityElement()
+        .accessibilityLabel(title)
+        .accessibilityValue("\(Int(HUDPercentageValue.displayedPercent(for: value))) percent")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                adjustValue(.increment)
+            case .decrement:
+                adjustValue(.decrement)
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    private func adjustValue(_ direction: HUDSliderInteraction.AdjustmentDirection) {
+        value = HUDSliderInteraction.adjustedValue(value, direction: direction, range: range)
     }
 }
 
